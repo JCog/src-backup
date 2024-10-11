@@ -4,12 +4,17 @@ import json
 import datetime as dt
 import time
 import sys
+import glob
+import os
 
 # run the script with the abbreviations of the games to backup as arguments
 GAMES = sys.argv[1:]
 
 # if set to True, prints url for every api request
 DEBUG = False
+
+# if greater than 0, only keeps the x most recent backups
+BACKUP_LIMIT = 0
 
 class Endpoint:
 
@@ -108,6 +113,17 @@ for game in GAMES:
     with open(f"{timestamp}_{game}_game_data.json", 'w') as outfile:
         json.dump(game_data, outfile)
     print(f"Downloaded game info for '{game}' ({timestamp}_{game}_game_data.json)")
+
+    if BACKUP_LIMIT:
+        for idx, f in enumerate(sorted(glob.glob(f"*{game}_runs.json"), reverse=True)):
+            if idx >= BACKUP_LIMIT:
+                os.remove(f)
+        print(f"Deleted old runs for '{game}'")
+
+        for idx, f in enumerate(sorted(glob.glob(f"*{game}_game_data.json"), reverse=True)):
+            if idx >= BACKUP_LIMIT:
+                os.remove(f)
+        print(f"Deleted old game data for '{game}'")
 
 elapsed_time = time.time() - start_time
 print(f"\nFinished in {round(elapsed_time, 1)} seconds.")
